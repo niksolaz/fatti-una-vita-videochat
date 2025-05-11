@@ -71,6 +71,24 @@ defmodule FattiUnaVitaWeb.RoomLive do
     {:noreply, assign(socket, ended?: true)}
   end
 
+  # @impl true
+  def handle_params(%{"duration" => duration}, _uri, socket) do
+    parsed_duration = String.to_integer(duration || "10")
+    valid_durations = [10, 20, 30]
+
+    if parsed_duration not in valid_durations do
+      {:noreply, push_patch(socket, to: ~p"/room/#{socket.assigns.room_id}?role=#{socket.assigns.role}&duration=10")}
+    else
+      # Se duration è cambiato, termina la call
+      if parsed_duration != socket.assigns.duration_minutes do
+        {:noreply, assign(socket, ended?: true)}
+      else
+        {:noreply, socket}
+      end
+    end
+  end
+
+
   def message_for_end_of_call do
     Enum.random(@default_list_of_messages)
   end
@@ -85,7 +103,7 @@ defmodule FattiUnaVitaWeb.RoomLive do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col items-center justify-center min-h-screen bg-stone-100 text-center p-8">
+    <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
       <%= if @ended? do %>
         <h1 class="text-3xl font-bold text-red-700">Fine della riunione.</h1>
         <p class="mt-4 text-2xl text-stone-700 font-semibold">Fatti una vita.</p>
@@ -100,18 +118,19 @@ defmodule FattiUnaVitaWeb.RoomLive do
         <%= if @role == "main" do %>
           <div class="mt-4">
             <label class="block text-sm text-gray-500">Link per invitare qualcuno:</label>
-            <div class="flex items-center gap-2 mt-2">
+            <div class="w-full sm:flex items-center gap-2 mt-2">
               <input id="invite-url" readonly class="w-full text-sm px-3 py-1 border rounded text-gray-700" value={@invite_url} />
-              <button phx-hook="CopyInvite" id="copy-btn" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition duration-150">📋 Copia</button>
+              <button phx-hook="CopyInvite" id="copy-btn" class="w-full bg-zinc-500 text-white px-2 py-1 rounded hover:bg-zinc-600 transition duration-150">📋 Copia</button>
             </div>
           </div>
         <% end %>
-
-        <video id="video-chat" phx-hook="VideoChat" class="w-full max-w-2xl h-96 bg-black mt-6 rounded shadow-inner" muted></video>
-        <video id="remote-video" class="w-full max-w-2xl h-96 bg-black mt-4 rounded shadow-inner" autoplay playsinline></video>
+        <div class="space-y-3 md:space-y-0 md:flex items-center justify-center gap-3 py-6">
+          <video id="video-chat" phx-hook="VideoChat" class="w-full max-w-xl h-80 bg-black rounded shadow-inner" muted></video>
+          <video id="remote-video" class="w-full max-w-xl h-80 bg-black rounded shadow-inner" autoplay playsinline></video>
+        </div>
 
         <p class="mt-4 text-1xl text-stone-700 font-semibold">Fatti una vita! Abbandona con dignità.</p>
-        <button phx-click="leave" class="mt-8 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full shadow-lg transition duration-150">
+        <button phx-click="leave" class="mt-8 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded shadow-lg transition duration-150">
           Me ne vado &#<%= message_for_end_of_call_emoji_for_btn() %>;
         </button>
       <% end %>
