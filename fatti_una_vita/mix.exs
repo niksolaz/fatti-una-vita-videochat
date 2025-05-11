@@ -35,8 +35,7 @@ defmodule FattiUnaVita.MixProject do
       {:phoenix, "~> 1.7.18"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
-      # {:postgrex, ">= 0.0.0"},
-      {:ecto_sqlite3, "~> 0.13.0"},
+      {:postgrex, ">= 0.0.0"},  # <== questa!
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.0.0"},
@@ -61,6 +60,7 @@ defmodule FattiUnaVita.MixProject do
       {:bandit, "~> 1.5"}
     ]
   end
+
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:

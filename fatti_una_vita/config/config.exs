@@ -9,8 +9,6 @@ import Config
 
 config :fatti_una_vita,
   ecto_repos: [FattiUnaVita.Repo],
-  adapter: Ecto.Adapters.SQLite3,
-  database: "priv/data/fatti_una_vita.db",
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
