@@ -1,4 +1,4 @@
-let Hooks = {}
+let Video = {}
 
 async function waitForLiveViewReady(maxRetries = 10, interval = 5000) {
   return new Promise(resolve => {
@@ -13,7 +13,7 @@ async function waitForLiveViewReady(maxRetries = 10, interval = 5000) {
   })
 }
 
-Hooks.VideoChat = {
+Video.VideoChat = {
   mounted() {
     console.log("📹 VideoChat hook mounted")
 
@@ -151,7 +151,7 @@ Hooks.VideoChat = {
   }
 }
 
-Hooks.CopyInvite = {
+Video.CopyInvite = {
   mounted() {
     const button = this.el
     const input = document.getElementById("invite-url")
@@ -175,4 +175,4 @@ Hooks.CopyInvite = {
   }
 }
 
-export default Hooks
+export default Video
