@@ -19,10 +19,13 @@ defmodule FattiUnaVitaWeb.RoomLive do
   ]
 
   def mount(%{"id" => room_id, "role" => role, "duration" => duration}, _session, socket) do
-    minutes = String.to_integer(duration || "10")
+    valid_durations = [10, 20, 30]
+    parsed_duration = String.to_integer(duration || "10")
+
+    minutes = if parsed_duration in valid_durations, do: parsed_duration, else: 10
 
     if connected?(socket) do
-      Process.send_after(self(), :end_call, minutes * 60 * 1000)
+      Process.send_after(self(), :end_call, parsed_duration * 60 * 1000)
     end
 
     invite_url =
@@ -89,6 +92,7 @@ defmodule FattiUnaVitaWeb.RoomLive do
         <p class="mt-4 text-1xl text-stone-700 font-semibold">oppure</p>
         <p class="mt-4 text-2xl text-stone-700 font-semibold"><%= message_for_end_of_call() %></p>
         <p class="text-9xl py-5">&#<%= message_for_end_of_call_emoji() %>;</p>
+        <a href="/" class="mt-4 border rounded-lg bg-zinc-50 px-6 py-4 text-2xl text-stone-700 font-semibold">Torna alla pagina iniziale se ti vuoi male</a>
       <% else %>
         <h1 class="text-2xl font-semibold text-stone-800">Stanza ID: <%= @room_id %> (<%= @role %>)</h1>
         <p class="text-md text-stone-600">Durata: <%= @duration_minutes %> minuti</p>
