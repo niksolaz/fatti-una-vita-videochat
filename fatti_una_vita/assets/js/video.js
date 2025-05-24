@@ -66,15 +66,15 @@ Video.VideoChat = {
           this.peer.addTrack(track, stream)
         })
 
-        // SOLO main crea offerta
+        console.log("✅ Tracce aggiunte, provo a forzare la negoziazione (solo main)");
         if (window.location.href.includes("role=main")) {
-          this.peer.onnegotiationneeded = async () => {
-            console.log("⚙️ onnegotiationneeded, creo offer")
-            await waitForLiveViewReady()
-            if (!window.liveSocket?.isConnected()) return
+          (async () => {
+            console.log("⚙️ Creo offerta manualmente (main)");
+            await waitForLiveViewReady();
+            if (!window.liveSocket?.isConnected()) return;
 
-            const offer = await this.peer.createOffer()
-            await this.peer.setLocalDescription(offer)
+            const offer = await this.peer.createOffer();
+            await this.peer.setLocalDescription(offer);
 
             this.pushEvent("signal", {
               to: "all",
@@ -82,8 +82,9 @@ Video.VideoChat = {
                 type: "offer",
                 sdp: this.peer.localDescription
               }
-            })
-          }
+            });
+            console.log("📤 Offerta inviata!");
+          })();
         }
       })
       .catch(err => {
@@ -101,25 +102,29 @@ Video.VideoChat = {
             candidate: event.candidate
           }
         })
+
+        console.log("data.type === candidate pushEvent disponibile:", typeof this.pushEvent)
       }
     }
 
     // === Segnali ===
     this.handleEvent("signal", async ({ from, data }) => {
-      console.log("📨 Ricevuto:", data.type)
+      console.log("=== [CLIENT] handleEvent SIGNAL ===");
+      console.log("📨 Ricevuto da:", from, "Tipo:", data.type, "Dati:", data);
 
       if (data.type === "offer") {
-        await this.peer.setRemoteDescription(new RTCSessionDescription(data.sdp))
+        console.log("🟢 Ricevuta offer, imposto remoteDescription");
+        await this.peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
 
         if (this.pendingCandidates?.length) {
           for (const c of this.pendingCandidates) {
-            await this.peer.addIceCandidate(new RTCIceCandidate(c))
+            await this.peer.addIceCandidate(new RTCIceCandidate(c));
           }
-          this.pendingCandidates = []
+          this.pendingCandidates = [];
         }
 
-        const answer = await this.peer.createAnswer()
-        await this.peer.setLocalDescription(answer)
+        const answer = await this.peer.createAnswer();
+        await this.peer.setLocalDescription(answer);
 
         this.pushEvent("signal", {
           to: from,
@@ -127,24 +132,29 @@ Video.VideoChat = {
             type: "answer",
             sdp: this.peer.localDescription
           }
-        })
+        });
+
+        console.log("📤 Answer inviata!");
       }
 
       if (data.type === "answer") {
-        await this.peer.setRemoteDescription(new RTCSessionDescription(data.sdp))
+        console.log("🟡 Ricevuta answer, imposto remoteDescription");
+        await this.peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        console.log("data.type === answer pushEvent disponibile:", typeof this.pushEvent);
       }
 
       if (data.type === "candidate") {
+        console.log("🔵 Ricevuto candidate", data.candidate);
         try {
-          const candidate = new RTCIceCandidate(data.candidate)
+          const candidate = new RTCIceCandidate(data.candidate);
           if (this.peer.remoteDescription) {
-            await this.peer.addIceCandidate(candidate)
+            await this.peer.addIceCandidate(candidate);
           } else {
-            this.pendingCandidates = this.pendingCandidates || []
-            this.pendingCandidates.push(data.candidate)
+            this.pendingCandidates = this.pendingCandidates || [];
+            this.pendingCandidates.push(data.candidate);
           }
         } catch (err) {
-          console.error("⚠️ ICE error:", err)
+          console.error("⚠️ ICE error:", err);
         }
       }
     })

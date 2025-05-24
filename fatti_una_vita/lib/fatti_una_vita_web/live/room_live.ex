@@ -24,9 +24,17 @@ defmodule FattiUnaVitaWeb.RoomLive do
 
     minutes = if parsed_duration in valid_durations, do: parsed_duration, else: 10
 
-    if connected?(socket) do
-      Process.send_after(self(), :end_call, parsed_duration * 60 * 1000)
+    IO.inspect({:mounting, room_id, role, socket.id})
+
+    socket = if connected?(socket) do
+      Phoenix.PubSub.subscribe(FattiUnaVita.PubSub, "room:#{room_id}")
+      socket
+    else
+      socket
     end
+
+    Process.send_after(self(), :end_call, parsed_duration * 60 * 1000)
+    IO.inspect({:subscribed_to_topic, "room:#{room_id}"})
 
     invite_url =
       if role == "main" do
@@ -45,8 +53,16 @@ defmodule FattiUnaVitaWeb.RoomLive do
      )}
   end
 
-  def handle_info({:signal, from, _to, data}, socket) do
-    push_event(socket, "signal", %{from: from, data: data})
+  def handle_info({:signal, from, to, data}, socket) do
+    IO.puts("WOW 🎯 socket #{socket.id} received signal from #{from}")
+    IO.inspect({:signal_received_on_socket, socket.assigns.role, socket.id, data})
+    IO.inspect({:log_handle_info, socket.id, to, from})
+    if (to == "all" and from != socket.id) or (to == socket.id) do
+      IO.inspect({:forwarding_signal_to_socket, socket.id, data})
+      push_event(socket, "signal", %{from: from, data: data})
+    else
+      IO.inspect({:ignoring_signal_for_socket, socket.id, data})
+    end
     {:noreply, socket}
   end
 
@@ -55,10 +71,11 @@ defmodule FattiUnaVitaWeb.RoomLive do
   end
 
   def handle_event("signal", %{"to" => to, "data" => data}, socket) do
-    IO.inspect({:received_signal, to, data})
+    IO.inspect({:received_signal, to, data, socket_id: socket.id})
 
-    Phoenix.PubSub.broadcast(
+    Phoenix.PubSub.broadcast_from(
       FattiUnaVita.PubSub,
+      self(),
       "room:#{socket.assigns.room_id}",
       {:signal, socket.id, to, data}
     )
